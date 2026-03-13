@@ -1,0 +1,13 @@
+services:
+  thermal-marky:
+    build: .
+#    ports:
+#      - "8000:8000"
+    network_mode: host
+    privileged: true
+    devices:
+      - "/dev/bus/usb:/dev/bus/usb"
+    user: root # Often necessary for direct hardware access
+    restart: unless-stopped
+    env_file:
+      - .env

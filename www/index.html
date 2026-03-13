@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Thermal Marky Printer UI</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/sketchy/bootstrap.min.css" integrity="sha384-JydQZovtaTxBDWypezbaeDcTZRTjToRV4VMLNx6PTVbViu5x+4DtMCJQmwpYrZCF" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="#">Thermal Marky Printer UI</a>
+    </div>
+</nav>
+
+<div class="container mt-2 mb-5">
+    <div class="row mt-5 mb-3">
+        <div class="col-3 d-none d-sm-block"></div>
+
+        <div class="col">
+
+            <div class="row">
+                <div class="col"><h2>Print ToDo Item</h2></div>
+            </div>
+
+            <form method="post" action="/print">
+                <input type="hidden" name="_token" value="">
+                <div class="row icons mb-3">
+                    <div class="col editorButtons">
+                        <div class="row">
+                            <div class="col">
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="H1" title="Header 1">H1</button>
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="H2" title="Header 2">H2</button>
+                                <button class="btn d-inline btn-sm btn-secondary fw-bold" data-action="B" title="Bold">B</button>
+                                <button class="btn d-inline btn-sm btn-secondary text-decoration-underline" data-action="U" title="Underline">U</button>
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="alignLeft" title="Align Left"><i class="fa-solid fa-align-left"></i></button>
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="alignCenter" title="Align Center"><i class="fa-solid fa-align-center"></i></button>
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="alignRight" title="Align Right"><i class="fa-solid fa-align-right"></i></button>
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="qr" title="QR Codee"><i class="fa-solid fa-qrcode"></i></button>
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="L-" title="Line of dashes">L (-)</button>
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="L*" title="Line of asterisks">L (*)</button>
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="checkList" title="Check List"><i class="fa-solid fa-list-check"></i></button>
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="bulletList" title="Bullet Point List"><i class="fa-solid fa-list-ul"></i></button>
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="numberList" title="Numbered List"><i class="fa-solid fa-list-ol"></i></button>
+                            </div>
+                            <div class="col-2 text-end">
+                                <button class="btn d-inline btn-sm btn-secondary" data-action="T1" data-template="[align=center]# Title\n\nMessage" title="Template 1">T1</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="mb-3">
+                            <textarea rows="10" name="text" id="text" class="form-control font-monospace small" autofocus required></textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button class="btn btn-primary" type="button" id="print">Print</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col">
+                        <div id="status"></div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-3 d-none d-sm-block"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function injectText(text) {
+        let textarea = document.getElementById('text');
+        let cursorPosition = textarea.selectionStart;
+        let textBeforeCursor = textarea.value.substring(0, cursorPosition);
+        let textAfterCursor = textarea.value.substring(cursorPosition, textarea.value.length);
+        textarea.value = textBeforeCursor + text + textAfterCursor;
+        textarea.setSelectionRange(cursorPosition + text.length, cursorPosition + text.length);
+        textarea.focus();
+    }
+
+    function encloseSelectedText(characters) {
+        let textarea = document.getElementById('text');
+        let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+        let enclosedText = characters + selectedText + characters;
+        let cursorPosition = textarea.selectionStart;
+        textarea.value = textarea.value.substring(0, textarea.selectionStart) + enclosedText + textarea.value.substring(textarea.selectionEnd);
+        textarea.setSelectionRange(cursorPosition + characters.length, cursorPosition + enclosedText.length - characters.length); // Adjust selection range to exclude underscores
+        textarea.focus();
+    }
+
+    function convertToList(type) {
+        let textarea = document.getElementById('text');
+        let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+        let list = selectedText.split('\n');
+        for (let i = 0; i < list.length; i++) {
+            if (type === '1') {
+                list[i] = (i + 1) + '. ' + list[i];
+            } else {
+                list[i] = type + ' ' + list[i];
+            }
+        }
+        let text = list.join('\n');
+
+        textarea.value = textarea.value.substring(0, textarea.selectionStart) + text + textarea.value.substring(textarea.selectionEnd);
+        textarea.focus();
+    }
+
+    document.querySelectorAll('.editorButtons button').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            let action = this.dataset.action;
+
+            switch (action) {
+                case 'H1':
+                injectText('# ');
+                break;
+            case 'H2':
+                injectText('## ');
+                break;
+            case 'B':
+                encloseSelectedText('**');
+                break;
+            case 'U':
+                encloseSelectedText('__');
+                break;
+            case 'alignLeft':
+                injectText('[align=left]');
+                break;
+            case 'alignCenter':
+                injectText('[align=center]');
+                break;
+            case 'alignRight':
+                injectText('[align=right]');
+                break;
+            case 'qr':
+                injectText('[qr=]');
+                break;
+            case 'L-':
+                injectText('[effect=line--]');
+                break;
+            case 'L*':
+                injectText('[effect=line-*]');
+                break;
+            case 'T1':
+                let template = this.dataset.template.replaceAll("\\n", "\n");
+                document.getElementById('text').value = template;
+                break;
+            case 'checkList':
+                convertToList('[ ]');
+                break;
+            case 'bulletList':
+                convertToList('*');
+                break;
+            case 'numberList':
+                convertToList('1');
+                break;
+            default:
+                alert("Unknown action: " + action);
+                break;
+            }
+        });
+    });
+
+    document.getElementById('print').addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        const statusDiv = document.getElementById('status');
+        const markdown = document.getElementById('text').value;
+
+        statusDiv.textContent = 'Printing...';
+        statusDiv.className = 'status';
+
+        try {
+            const response = await fetch('/print', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ markdown })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                statusDiv.textContent = 'Successfully sent to printer!';
+                statusDiv.className = 'status alert alert-success';
+            } else {
+                statusDiv.textContent = 'Error: ' + (result.detail || 'Failed to print');
+                statusDiv.className = 'status alert alert-danger';
+            }
+        } catch (error) {
+            statusDiv.textContent = 'Error: ' + error.message;
+            statusDiv.className = 'status alert alert-danger';
+        }
+    });
+</script>
+
+</body>

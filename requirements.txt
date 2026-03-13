@@ -1,0 +1,5 @@
+python-escpos[all]
+python-dotenv
+fastapi
+uvicorn
+python-multipart
