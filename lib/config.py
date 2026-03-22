@@ -9,9 +9,13 @@ class Config:
     port: int = None
     max_lines: int = None
     line_width: int = None
+    font: str = None
+    text_encoding: str = None
     type: str = None
     vendor_id: int = None
     product_id: int = None
+    in_ep: int = None
+    out_ep: int = None
 
 
 class ConfigHandler:
@@ -27,14 +31,20 @@ class ConfigHandler:
             port=int(os.getenv('MARKY_PORT', '9100').strip()),
             max_lines=int(os.getenv('MARKY_MAX_LINES', '30').strip()),
             line_width=int(os.getenv('MARKY_LINE_WIDTH', '48').strip()),
+            font=os.getenv('MARKY_FONT', 'a').strip().lower(),
+            text_encoding=os.getenv('MARKY_TEXT_ENCODING', '').strip(),
             vendor_id=int(os.getenv('MARKY_VENDOR_ID', '0x04b8').strip(), 0),
             product_id=int(os.getenv('MARKY_PRODUCT_ID', '0x0e20').strip(), 0),
+            in_ep=int(os.getenv('MARKY_IN_EP', '0x82').strip(), 0),
+            out_ep=int(os.getenv('MARKY_OUT_EP', '0x01').strip(), 0)
         )
 
         if config.max_lines <= 0:
             raise Exception(f"Invalid max lines number: {config.max_lines}")
         elif config.line_width <= 0:
             raise Exception(f"Invalid line width number: {config.line_width}")
+        elif config.font not in ['a', 'b']:
+            raise Exception(f"Invalid font: {config.font}")
 
         if config.type == 'network':
             if config.port < 0 or config.port > 65535:
