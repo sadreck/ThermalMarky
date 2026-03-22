@@ -86,9 +86,7 @@ class ThermalPrinter:
         return None
 
     def _apply_printer_defaults(self) -> None:
-        logger.info("Applying printer defaults font=%s text_encoding=%s",
-                    self.config.font,
-                    self.config.text_encoding or "<escpos-default>")
+        logger.info("Applying printer defaults font=%s", self.config.font)
         self._reset_text_size()
         self.printer.set(normal_textsize=True, align='left', bold=False,
                          underline=False, font=self.config.font)

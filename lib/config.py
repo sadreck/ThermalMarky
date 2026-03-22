@@ -10,7 +10,6 @@ class Config:
     max_lines: int = None
     line_width: int = None
     font: str = None
-    text_encoding: str = None
     type: str = None
     vendor_id: int = None
     product_id: int = None
@@ -32,7 +31,6 @@ class ConfigHandler:
             max_lines=int(os.getenv('MARKY_MAX_LINES', '30').strip()),
             line_width=int(os.getenv('MARKY_LINE_WIDTH', '48').strip()),
             font=os.getenv('MARKY_FONT', 'a').strip().lower(),
-            text_encoding=os.getenv('MARKY_TEXT_ENCODING', '').strip(),
             vendor_id=int(os.getenv('MARKY_VENDOR_ID', '0x04b8').strip(), 0),
             product_id=int(os.getenv('MARKY_PRODUCT_ID', '0x0e20').strip(), 0),
             in_ep=int(os.getenv('MARKY_IN_EP', '0x82').strip(), 0),
