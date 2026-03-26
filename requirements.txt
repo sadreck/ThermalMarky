@@ -1,5 +1,6 @@
 python-escpos[all]
 python-dotenv
+platformdirs
 fastapi
 uvicorn
 python-multipart
