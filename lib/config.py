@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from dataclasses import dataclass
+from platformdirs import user_config_path
 
 
 @dataclass
@@ -20,9 +21,24 @@ class Config:
 class ConfigHandler:
     @staticmethod
     def load() -> Config:
-        env_file = os.path.join(os.path.dirname(__file__), '../.env')
-        if os.path.isfile(env_file):
-            load_dotenv()
+        module_dir = os.path.dirname(__file__)
+        user_env_files = [
+            str(user_config_path('ThermalMarky') / '.env'),
+            os.path.expanduser('~/.config/ThermalMarky/.env'),
+        ]
+        local_env_files = [
+            os.path.join(module_dir, '.env'),
+        ]
+
+        checked = set()
+        for env_file in user_env_files + local_env_files:
+            env_file = os.path.abspath(env_file)
+            if env_file in checked:
+                continue
+            checked.add(env_file)
+            if os.path.isfile(env_file):
+                load_dotenv(dotenv_path=env_file)
+                break
 
         config = Config(
             type=os.getenv('MARKY_TYPE', 'network').strip().lower(),

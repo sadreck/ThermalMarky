@@ -53,6 +53,8 @@ MARKY_MAX_LINES=30
 MARKY_LINE_WIDTH=48
 ```
 
+ThermalMarky (both web server and standalone) will also read an .env file at `~/.config/ThermalMarky/.env`, or in the appropriate platform-specific config directory. That would be `$XDG_CONFIG_HOME/ThermalMarky` on Linux, `~/Library/Application Support/ThermalMarky` on MacOS, or `%APPDATA%/ThermalMarky` on Windows.
+
 ## Running with Docker (Recommended)
 
 Docker is the easiest way to get ThermalMarky up and running, especially for managing USB permissions.
@@ -108,6 +110,12 @@ curl --insecure -X POST "https://127.0.0.1:8000/print" -d "markdown=$(cat my-mes
 # or
 curl --insecure -X POST "https://127.0.0.1:8000/print" --data-urlencode "markdown@my-message.md"
 ```
+
+### Standalone script
+
+There is also a standalone, one-file script in [scripts/thermalprint.py](scripts/thermalprint.py). It uses a [uv](https://docs.astral.sh/uv/) shebang with inline dependencies, so you can put it somewhere in your path and execute `thermalprint.py my_list.md` to print, as long as you have uv installed. You can also execute it with `python thermalprint.py` if you are content to manage your dependencies some other way.
+
+For the standalone script, you should also configure your printer by putting a .env file in `~/.config/ThermalMarky/.env`.
 
 ## Markdown Support
 
