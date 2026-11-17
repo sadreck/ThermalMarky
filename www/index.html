@@ -71,8 +71,74 @@
 </div>
 
 <script type="text/javascript">
+    const textarea = document.getElementById('text');
+    const undoHistory = [];
+    const redoHistory = [];
+    let applyingHistory = false;
+    let historyTimer;
+
+    function saveHistoryState(history) {
+        history.push({
+            value: textarea.value,
+            selectionStart: textarea.selectionStart,
+            selectionEnd: textarea.selectionEnd,
+            selectionDirection: textarea.selectionDirection
+        });
+        if (history.length > 200) history.shift();
+    }
+
+    function applyHistoryState(state) {
+        applyingHistory = true;
+        textarea.value = state.value;
+        textarea.setSelectionRange(state.selectionStart, state.selectionEnd, state.selectionDirection);
+        textarea.focus();
+        applyingHistory = false;
+    }
+
+    function undo() {
+        if (undoHistory.length === 0) return;
+        saveHistoryState(redoHistory);
+        applyHistoryState(undoHistory.pop());
+    }
+
+    function redo() {
+        if (redoHistory.length === 0) return;
+        saveHistoryState(undoHistory);
+        applyHistoryState(redoHistory.pop());
+    }
+
+    textarea.addEventListener('input', () => {
+        if (applyingHistory) return;
+        clearTimeout(historyTimer);
+        historyTimer = setTimeout(() => saveHistoryState(undoHistory), 500);
+        redoHistory.length = 0;
+    });
+
+    // Flush pending typed input before a toolbar edit so undo returns to the exact
+    // text and selection that existed before clicking the toolbar.
+    document.querySelectorAll('.editorButtons button').forEach(button => {
+        button.addEventListener('mousedown', () => {
+            clearTimeout(historyTimer);
+            if (undoHistory.length === 0 || undoHistory[undoHistory.length - 1].value !== textarea.value ||
+                undoHistory[undoHistory.length - 1].selectionStart !== textarea.selectionStart ||
+                undoHistory[undoHistory.length - 1].selectionEnd !== textarea.selectionEnd) {
+                saveHistoryState(undoHistory);
+            }
+        });
+    });
+
+    textarea.addEventListener('keydown', event => {
+        if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+        if (event.key.toLowerCase() === 'z') {
+            event.preventDefault();
+            if (event.shiftKey) redo(); else undo();
+        } else if (event.key.toLowerCase() === 'y' && event.ctrlKey) {
+            event.preventDefault();
+            redo();
+        }
+    });
+
     function injectText(text) {
-        let textarea = document.getElementById('text');
         let cursorPosition = textarea.selectionStart;
         let textBeforeCursor = textarea.value.substring(0, cursorPosition);
         let textAfterCursor = textarea.value.substring(cursorPosition, textarea.value.length);
@@ -82,7 +148,6 @@
     }
 
     function encloseSelectedText(characters) {
-        let textarea = document.getElementById('text');
         let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
         let enclosedText = characters + selectedText + characters;
         let cursorPosition = textarea.selectionStart;
@@ -92,7 +157,6 @@
     }
 
     function convertToList(type) {
-        let textarea = document.getElementById('text');
         let selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
         let list = selectedText.split('\n');
         for (let i = 0; i < list.length; i++) {
@@ -111,6 +175,9 @@
     document.querySelectorAll('.editorButtons button').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
+            clearTimeout(historyTimer);
+            saveHistoryState(undoHistory);
+            redoHistory.length = 0;
             let action = this.dataset.action;
 
             switch (action) {
@@ -146,7 +213,9 @@
                 break;
             case 'T1':
                 let template = this.dataset.template.replaceAll("\\n", "\n");
-                document.getElementById('text').value = template;
+                textarea.value = template;
+                textarea.setSelectionRange(template.length, template.length);
+                textarea.focus();
                 break;
             case 'checkList':
                 convertToList('[ ]');
