@@ -76,14 +76,28 @@
     const redoHistory = [];
     let applyingHistory = false;
     let historyTimer;
+    let typingGroupActive = false;
 
-    function saveHistoryState(history) {
-        history.push({
+    function currentHistoryState() {
+        return {
             value: textarea.value,
             selectionStart: textarea.selectionStart,
             selectionEnd: textarea.selectionEnd,
             selectionDirection: textarea.selectionDirection
-        });
+        };
+    }
+
+    function sameHistoryState(first, second) {
+        return first && second && first.value === second.value &&
+            first.selectionStart === second.selectionStart &&
+            first.selectionEnd === second.selectionEnd &&
+            first.selectionDirection === second.selectionDirection;
+    }
+
+    function saveHistoryState(history) {
+        const state = currentHistoryState();
+        if (sameHistoryState(history[history.length - 1], state)) return;
+        history.push(state);
         if (history.length > 200) history.shift();
     }
 
@@ -96,21 +110,31 @@
     }
 
     function undo() {
+        clearTimeout(historyTimer);
+        typingGroupActive = false;
         if (undoHistory.length === 0) return;
-        saveHistoryState(redoHistory);
+        redoHistory.push(currentHistoryState());
         applyHistoryState(undoHistory.pop());
     }
 
     function redo() {
+        clearTimeout(historyTimer);
+        typingGroupActive = false;
         if (redoHistory.length === 0) return;
-        saveHistoryState(undoHistory);
+        undoHistory.push(currentHistoryState());
         applyHistoryState(redoHistory.pop());
     }
+
+    textarea.addEventListener('beforeinput', () => {
+        if (applyingHistory || typingGroupActive) return;
+        saveHistoryState(undoHistory);
+        typingGroupActive = true;
+    });
 
     textarea.addEventListener('input', () => {
         if (applyingHistory) return;
         clearTimeout(historyTimer);
-        historyTimer = setTimeout(() => saveHistoryState(undoHistory), 500);
+        historyTimer = setTimeout(() => { typingGroupActive = false; }, 500);
         redoHistory.length = 0;
     });
 
@@ -119,11 +143,8 @@
     document.querySelectorAll('.editorButtons button').forEach(button => {
         button.addEventListener('mousedown', () => {
             clearTimeout(historyTimer);
-            if (undoHistory.length === 0 || undoHistory[undoHistory.length - 1].value !== textarea.value ||
-                undoHistory[undoHistory.length - 1].selectionStart !== textarea.selectionStart ||
-                undoHistory[undoHistory.length - 1].selectionEnd !== textarea.selectionEnd) {
-                saveHistoryState(undoHistory);
-            }
+            typingGroupActive = false;
+            saveHistoryState(undoHistory);
         });
     });
 
@@ -176,6 +197,7 @@
         button.addEventListener('click', function(e) {
             e.preventDefault();
             clearTimeout(historyTimer);
+            typingGroupActive = false;
             saveHistoryState(undoHistory);
             redoHistory.length = 0;
             let action = this.dataset.action;
